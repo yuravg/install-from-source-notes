@@ -1,0 +1,156 @@
+#+title: Notes on installing packages from source
+#+author: Yuriy Gritsenko
+#+STARTUP: overview
+
+* Preface
+
+[[https://wiki.debian.org/DontBreakDebian][Advice For New Users On Not Breaking Their Debian System]]
+
+* Install packages
+
+** Git
+
+https://github.com/git/git
+
+#+begin_src shell-script
+make configure
+./configure --prefix=/usr/local
+make all doc
+sudo make install install-doc install-html
+#+end_src
+
+** Emacs
+
+Download and install:
+
+https://savannah.gnu.org/projects/emacs/
+
+http://www.gnu.org/software/emacs/
+
+#+begin_src shell-script
+./configure --prefix=/usr/local
+make
+sudo make install
+#+end_src
+
+** Tagging
+
+https://www.reddit.com/r/emacs/comments/3pni17/ctags_etags_or_gtags/
+
+https://scripter.co/ctags-systemverilog-and-emacs/
+
+*** Ctags
+
+Download and install
+
+https://github.com/universal-ctags/ctags ([[https://github.com/universal-ctags][universal-ctags]])
+
+Install
+#+begin_src shell-script
+git clone https://github.com/universal-ctags/ctags.git
+cd ctags
+./autogen.sh
+./configure --prefix=/usr/local
+make
+make install # may require extra privileges depending on where to install
+#+end_src
+
+Add alternatives
+#+begin_src shell-script
+# Copy
+sudo cp /usr/local/bin/ctags /usr/local/bin/ctags-universal-<version>
+# Add alternatives
+sudo update-alternatives --install /usr/local/bin/ctags ctags /usr/local/bin/ctags-universal-<verson> 9
+#+end_src
+
+**** Installation for Windows OS
+[[https://github.com/universal-ctags/ctags][Universal Ctags]] - copy binary to PATH directory (download and unpack to c:\emacs\bin, overwrite default ctags.exe)
+
+*** Global
+
+Prepare
+#+begin_src shell-script
+sudo aptitude build-dep global
+#+end_src
+
+Download and install:
+
+http://www.gnu.org/software/global/download.html
+
+#+begin_src shell-script
+./configure --prefix=/usr/local
+# for exuberant-ctags
+# ./configure --prefix=/usr/local --with-exuberant-ctags=/usr/local/bin/ctags
+make
+sudo make install
+#+end_src
+
+**** Installation for Windows OS
+[[https://www.gnu.org/software/global/download.html][GLOBAL]] - copy binary to PATH directory (download and unpack to c:\emacs\bin)
+
+**** Tips
+man: http://www.gnu.org/software/global/manual/global.pdf
+
+Copy config file from global-pygments-plugin-master (sample.globalrc)
+https://github.com/yoshizow/global-pygments-plugin
+
+Install Pygments (for example by pip, https://github.com/yoshizow/global-pygments-plugin)
+
+*** Ctags alternatives
+
+If other alternatives are required
+
+**** Emacs
+
+If Emacs ctags is required as an alternatives
+#+begin_src shell-script
+# Save(check with command: ctags --version)
+sudo cp /usr/local/bin/ctags /usr/local/bin/ctags-emacs-<verson>
+
+# Add alternatives
+sudo update-alternatives --install /usr/local/bin/ctags ctags /usr/local/bin/ctags-emacs-<verson> 10
+#+end_src
+
+**** Exuberant-ctags
+
+If exuberant-ctags ctags is requred as an alternatives
+#+begin_src shell-script
+# Install
+sudo aptitude install exuberant-ctags
+# Check current ctagas version
+ctags --version
+Exuberant Ctags 5.9~svn20110310, Copyright (C) 1996-2009 Darren Hiebert
+  Addresses: <dhiebert@users.sourceforge.net>, http://ctags.sourceforge.net
+  Optional compiled features: +wildcards, +regex
+
+# Add alternatives
+sudo update-alternatives --install /usr/local/bin/ctags ctags /usr/bin/ctags-exuberant 11
+#+end_src
+
+* Remove packages installed from source
+
+[[https://ostechnix.com/an-easy-way-to-remove-programs-installed-from-source-in-linux/][An Easy Way To Remove Programs Installed From Source In Linux]]
+
+[[https://www.rosehosting.com/blog/how-to-easily-remove-packages-installed-from-source-in-linux/][How to Easily Remove Packages Installed From Source in Linux]]
+
+*** Stow - software package installation manager
+
+[[https://linuxconfig.org/how-to-use-gnu-stow-to-manage-programs-installed-from-source-and-dotfiles][GNU Stow to manage programs installed from source and dotfiles]]
+
+#+begin_src shell
+# 1. install stow
+sudo aptitude isntall stow
+# 2. build and intall <package_name> >with 'prefix':
+./configure --prefix=/usr/local/stow/<package_name>
+sudo make install
+# 3. generate symlinks
+cd /usr/local/stow
+sudo stow --verbose=2 <package_name>
+# 4.1. check links
+stow -vv <package_name>
+# 4.2. check that links replace executables files
+tree /usr/local/bin/<package_name>
+# 5. remove <package_name>
+cd /usr/local/stow
+sudo stow --delete <package_name>
+#+end_src
