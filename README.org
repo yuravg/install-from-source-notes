@@ -63,7 +63,7 @@ cd ctags
 ./autogen.sh
 ./configure --prefix=/usr/local
 make
-make install # may require extra privileges depending on where to install
+sudo make install
 #+end_src
 
 Add alternatives:
@@ -151,7 +151,7 @@ sudo update-alternatives --install /usr/local/bin/ctags ctags /usr/bin/ctags-exu
 #+begin_src shell
 # 1. install stow
 sudo aptitude isntall stow
-# 2. build and intall <package_name> >with 'prefix':
+# 2. build and intall <package_name> to 'stow' directory(use prefix options):
 ./configure --prefix=/usr/local/stow/<package_name>
 sudo make install
 # 3. generate symlinks
