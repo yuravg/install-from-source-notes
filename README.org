@@ -10,12 +10,13 @@
 
 ** Git
 
-Prepare:
+*** Prepare
+
 #+begin_src shell-script
 sudo aptitude build-dep git
 #+end_src
 
-Download and install:
+*** Download and install
 
 https://github.com/git/git
 
@@ -28,12 +29,13 @@ sudo make install install-doc install-html
 
 ** Emacs
 
-Prepare:
+*** Prepare
+
 #+begin_src shell-script
 sudo aptitude build-dep emacs
 #+end_src
 
-Download and install:
+*** Download and install
 
 https://savannah.gnu.org/projects/emacs/
 
@@ -53,7 +55,7 @@ https://scripter.co/ctags-systemverilog-and-emacs/
 
 *** Ctags
 
-Download and install:
+**** Download and install
 
 https://github.com/universal-ctags/ctags ([[https://github.com/universal-ctags][universal-ctags]])
 
@@ -66,7 +68,8 @@ make
 sudo make install
 #+end_src
 
-Add alternatives:
+**** Add alternatives
+
 #+begin_src shell-script
 # Copy
 sudo cp /usr/local/bin/ctags /usr/local/bin/ctags-universal-<version>
@@ -75,16 +78,18 @@ sudo update-alternatives --install /usr/local/bin/ctags ctags /usr/local/bin/cta
 #+end_src
 
 **** Installation for Windows OS
+
 [[https://github.com/universal-ctags/ctags][Universal Ctags]] - copy binary to PATH directory (download and unpack to c:\emacs\bin, overwrite default ctags.exe)
 
 *** Global
 
-Prepare:
+**** Prepare
+
 #+begin_src shell-script
 sudo aptitude build-dep global
 #+end_src
 
-Download and install:
+**** Download and install
 
 http://www.gnu.org/software/global/download.html
 
@@ -97,9 +102,11 @@ sudo make install
 #+end_src
 
 **** Installation for Windows OS
+
 [[https://www.gnu.org/software/global/download.html][GLOBAL]] - copy binary to PATH directory (download and unpack to c:\emacs\bin)
 
 **** Tips
+
 man: http://www.gnu.org/software/global/manual/global.pdf
 
 Copy config file from global-pygments-plugin-master (sample.globalrc)
