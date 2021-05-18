@@ -43,7 +43,10 @@ http://www.gnu.org/software/emacs/
 
 #+begin_src shell-script
 ./configure --prefix=/usr/local
-make
+# To support 'modules': vterm, etc.
+# NOTE: should install: libvterm-dev (Debian, Ubuntu)
+./configure --with-modules --prefix=/usr/local
+make -j$(nproc)
 sudo make install
 #+end_src
 
