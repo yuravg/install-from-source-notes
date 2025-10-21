@@ -2,11 +2,55 @@
 #+author: Yuriy Gritsenko
 #+STARTUP: overview
 
+* Contents                                                         :noexport:
+:PROPERTIES:
+:TOC:       :include all :depth 2
+:END:
+
+:CONTENTS:
+- [[#preface][Preface]]
+- [[#prerequisites][Prerequisites]]
+- [[#install-packages][Install Packages]]
+  - [[#git][Git]]
+  - [[#emacs][Emacs]]
+  - [[#tagging-tools][Tagging Tools]]
+- [[#remove-packages-installed-from-source][Remove Packages Installed From Source]]
+  - [[#method-1-using-make-uninstall-if-supported][Method 1: Using 'make uninstall' (if supported)]]
+  - [[#method-2-manual-removal][Method 2: Manual removal]]
+  - [[#method-3-using-gnu-stow-recommended][Method 3: Using GNU Stow (Recommended)]]
+- [[#troubleshooting][Troubleshooting]]
+  - [[#common-build-errors][Common Build Errors]]
+  - [[#compilation-issues][Compilation Issues]]
+- [[#verification-commands][Verification Commands]]
+:END:
+
 * Preface
 
 [[https://wiki.debian.org/DontBreakDebian][Advice For New Users On Not Breaking Their Debian System]]
 
-* Install packages
+*Important Notes:*
+- Installing from source requires root/sudo privileges
+- Always install build dependencies before compiling
+- Default installation prefix is =/usr/local=
+- Consider using GNU Stow for easier package management
+- Keep notes of installed versions for future reference
+
+* Prerequisites
+
+Before installing packages from source, ensure you have:
+
+#+begin_src shell-script
+# Update package index
+sudo apt update
+
+# Install essential build tools
+sudo aptitude install build-essential autoconf automake libtool pkg-config
+
+# Check available disk space (recommended: at least 2GB free)
+df -h /usr/local
+#+end_src
+
+* Install Packages
 
 ** Git
 
@@ -15,7 +59,11 @@
 Install build dependencies:
 
 #+begin_src shell-script
+# Install git build dependencies
 sudo aptitude build-dep git
+
+# For building documentation, also install:
+sudo aptitude install asciidoc xmlto docbook2x
 #+end_src
 
 *** Download and install
@@ -23,11 +71,27 @@ sudo aptitude build-dep git
 Source repository: https://github.com/git/git
 
 #+begin_src shell-script
+# Clone the repository
+git clone https://github.com/git/git.git
+cd git
+
+# Checkout the latest stable release (or specify a version)
+git checkout $(git describe --tags --abbrev=0)
+
+# Configure and build
 make configure
 ./configure --prefix=/usr/local
 make all doc
+
+# Install
 sudo make install install-doc install-html
+
+# Verify installation
+git --version
+which git
 #+end_src
+
+*Note:* Building documentation (=doc= target) requires additional packages. If you don't need docs, use =make all= instead of =make all doc=.
 
 ** Emacs
 
@@ -36,7 +100,11 @@ sudo make install install-doc install-html
 Install build dependencies:
 
 #+begin_src shell-script
+# Install Emacs build dependencies
 sudo aptitude build-dep emacs
+
+# For modules support (required for vterm, pdf-tools, etc.), install:
+sudo aptitude install libvterm-dev
 #+end_src
 
 *** Download and install
@@ -46,17 +114,38 @@ Source repositories:
 - http://www.gnu.org/software/emacs/
 
 #+begin_src shell-script
+# Clone the repository
+git clone https://git.savannah.gnu.org/git/emacs.git
+cd emacs
+
+# Checkout the latest stable release
+git checkout $(git describe --tags --abbrev=0 --match "emacs-*")
+
+# Generate configure script
+./autogen.sh
+
 # Option 1: Basic installation
 ./configure --prefix=/usr/local
 
-# Option 2: With modules support (for vterm, etc.)
-# NOTE: First install libvterm-dev on Debian/Ubuntu
+# Option 2: With modules support (recommended for vterm, pdf-tools, tree-sitter, etc.)
+# This enables dynamic module loading for packages that require native compilation
 ./configure --with-modules --prefix=/usr/local
 
 # Build and install
 make -j$(nproc)
 sudo make install
+
+# Verify installation
+emacs --version
+which emacs
 #+end_src
+
+*What is modules support?*
+The =--with-modules= flag enables dynamic module loading, which is required for:
+- =vterm= (terminal emulator)
+- =pdf-tools= (PDF viewer)
+- =tree-sitter= (incremental parsing)
+- Other packages that use native libraries
 
 *** Emacs 'ctags' as alternative (optional)
 
@@ -66,39 +155,58 @@ using the alternatives system):
 #+begin_src shell-script
 # First, verify current version
 ctags --version
+
+# Get the actual version number (example: 29.1)
+EMACS_VERSION=$(emacs --version | head -n1 | awk '{print $3}')
+
 # Save the Emacs ctags binary with a versioned name
-sudo cp /usr/local/bin/ctags /usr/local/bin/ctags-emacs-<version>
+sudo cp /usr/local/bin/ctags /usr/local/bin/ctags-emacs-${EMACS_VERSION}
 
 # Register it as an alternative (priority: 10)
-sudo update-alternatives --install /usr/local/bin/ctags ctags /usr/local/bin/ctags-emacs-<version> 10
+sudo update-alternatives --install /usr/local/bin/ctags ctags /usr/local/bin/ctags-emacs-${EMACS_VERSION} 10
+
+# View all ctags alternatives
+update-alternatives --display ctags
 #+end_src
 
-** Tagging
+** Tagging Tools
 
 Additional resources:
 - https://www.reddit.com/r/emacs/comments/3pni17/ctags_etags_or_gtags/
 - https://scripter.co/ctags-systemverilog-and-emacs/
 
-*** Ctags
+*About tagging tools:*
+- *Universal Ctags*: Modern, actively maintained fork with better language support
+- *GNU Global*: Fast tag system with support for incremental updates
+- *Exuberant Ctags*: Legacy version, included for compatibility
+
+*** Ctags (Universal Ctags)
 
 **** Download and install
 
 Source repository: https://github.com/universal-ctags/ctags ([[https://github.com/universal-ctags][universal-ctags]])
 
 #+begin_src shell-script
+# Clone the repository
 git clone https://github.com/universal-ctags/ctags.git
 cd ctags
 
 # Get the last stable release tag from master branch
 git checkout $(git describe --tags --abbrev=0 master)
 
+# Generate configure script
 ./autogen.sh
 
 # Install to /usr/local (ctags will be at /usr/local/bin/ctags)
 ./configure --prefix=/usr/local
 
+# Build and install
 make -j$(nproc)
 sudo make install
+
+# Verify installation
+ctags --version
+which ctags
 #+end_src
 
 **** Add alternatives (optional)
@@ -106,18 +214,24 @@ sudo make install
 If you need to manage multiple ctags versions using alternatives system:
 
 #+begin_src shell-script
+# Get the actual version number
+CTAGS_VERSION=$(ctags --version | head -n1 | awk '{print $3}' | tr -d ',')
+
 # Backup the current version with a versioned name
-sudo cp /usr/local/bin/ctags /usr/local/bin/ctags-universal-<version>
+sudo cp /usr/local/bin/ctags /usr/local/bin/ctags-universal-${CTAGS_VERSION}
 
 # Register it as an alternative (priority: 9)
-sudo update-alternatives --install /usr/local/bin/ctags ctags /usr/local/bin/ctags-universal-<version> 9
+sudo update-alternatives --install /usr/local/bin/ctags ctags /usr/local/bin/ctags-universal-${CTAGS_VERSION} 9
+
+# View all ctags alternatives
+update-alternatives --display ctags
 #+end_src
 
 **** Installation for Windows OS
 
 [[https://github.com/universal-ctags/ctags][Universal Ctags]] - copy binary to PATH directory (download and unpack to c:\emacs\bin, overwrite default ctags.exe)
 
-*** Global
+*** Global (GNU Global)
 
 **** Prepare
 
@@ -125,6 +239,10 @@ Install build dependencies (may be required):
 
 #+begin_src shell-script
 sudo aptitude build-dep global
+
+# Install optional dependencies for better functionality
+sudo aptitude install python3-pip
+sudo pip3 install pygments
 #+end_src
 
 **** Download and install
@@ -132,87 +250,311 @@ sudo aptitude build-dep global
 Download page: http://www.gnu.org/software/global/download.html
 
 #+begin_src shell-script
-# Option 1: Without exuberant-ctags
+# Download the latest version from GNU
+wget http://tamacom.com/global/global-6.6.9.tar.gz
+tar xzf global-6.6.9.tar.gz
+cd global-6.6.9
+
+# Option 1: Basic installation
 ./configure --prefix=/usr/local
 
-# Option 2: With exuberant-ctags support
+# Option 2: With ctags support (universal-ctags recommended)
 ./configure --prefix=/usr/local --with-exuberant-ctags=/usr/local/bin/ctags
+
+# Option 3: With Pygments plugin support (recommended for more languages)
+./configure --prefix=/usr/local --with-exuberant-ctags=/usr/local/bin/ctags --with-pygments
 
 # Build and install
 make -j$(nproc)
 sudo make install
+
+# Verify installation
+gtags --version
+which gtags
 #+end_src
 
 **** Installation for Windows OS
 
 [[https://www.gnu.org/software/global/download.html][GLOBAL]] - copy binary to PATH directory (download and unpack to c:\emacs\bin)
 
-**** Tips
+**** Configuration Tips
 
 Manual: http://www.gnu.org/software/global/manual/global.pdf
 
-Configuration:
-1. Copy config file from global-pygments-plugin (sample.globalrc)
-   https://github.com/yoshizow/global-pygments-plugin
+*Setting up Pygments support:*
 
-2. Install Pygments (for example using pip)
-   https://github.com/yoshizow/global-pygments-plugin
+#+begin_src shell-script
+# 1. Copy the sample configuration file
+wget https://raw.githubusercontent.com/yoshizow/global-pygments-plugin/master/sample.globalrc
+mv sample.globalrc ~/.globalrc
 
-*** Exuberant-ctags (optional)
+# 2. Verify Pygments is installed
+python3 -m pygments --version
 
-If you need exuberant-ctags as an alternative:
+# 3. Test global with a project
+cd /path/to/your/project
+gtags  # Creates GTAGS, GRTAGS, GPATH files
+global -x main  # Find references to 'main'
+#+end_src
+
+*Common global commands:*
+- =gtags= - Create tag files
+- =global -x <symbol>= - Locate symbols
+- =global -r <symbol>= - Find references
+- =global -u= - Update tag files
+
+*** Exuberant Ctags (Legacy, Optional)
+
+*Note:* Exuberant Ctags is no longer actively maintained. Universal Ctags is recommended instead.
+
+If you need exuberant-ctags for compatibility:
 
 #+begin_src shell-script
 # Install exuberant-ctags from repository
 sudo aptitude install exuberant-ctags
 
 # Verify the installation and version
-ctags --version
+/usr/bin/ctags-exuberant --version
 # Expected output:
 # Exuberant Ctags 5.9~svn20110310, Copyright (C) 1996-2009 Darren Hiebert
 #   Addresses: <dhiebert@users.sourceforge.net>, http://ctags.sourceforge.net
 #   Optional compiled features: +wildcards, +regex
 
 # Register it as an alternative (priority: 11, highest priority)
-sudo update-alternatives --install /usr/local/bin/ctags ctags /usr/bin/ctags-exuberant 11
+sudo update-alternatives --install /usr/local/bin/ctags ctags \
+  /usr/bin/ctags-exuberant 11
+
+# View all ctags alternatives and select the one you want
+update-alternatives --display ctags
+sudo update-alternatives --config ctags
 #+end_src
 
-* Remove packages installed from source
+* Remove Packages Installed From Source
 
 Additional resources:
 - [[https://ostechnix.com/an-easy-way-to-remove-programs-installed-from-source-in-linux/][An Easy Way To Remove Programs Installed From Source In Linux]]
 - [[https://www.rosehosting.com/blog/how-to-easily-remove-packages-installed-from-source-in-linux/][How to Easily Remove Packages Installed From Source in Linux]]
 
-*** Stow - software package installation manager
+** Method 1: Using 'make uninstall' (if supported)
+
+Some packages support =make uninstall= from their build directory:
+
+#+begin_src shell-script
+# Navigate to the source directory where you built the package
+cd /path/to/source/directory
+
+# Uninstall (not all packages support this)
+sudo make uninstall
+#+end_src
+
+*Note:* This only works if you still have the source directory and the package's Makefile supports uninstall.
+
+** Method 2: Manual removal
+
+If =make uninstall= is not available:
+
+#+begin_src shell-script
+# List files installed by the package (example for git)
+# You'll need to check /usr/local/bin, /usr/local/share, etc.
+
+# Remove binaries
+sudo rm /usr/local/bin/git*
+
+# Remove man pages
+sudo rm -rf /usr/local/share/man/man1/git*
+
+# Remove documentation
+sudo rm -rf /usr/local/share/doc/git*
+
+# Update man database
+sudo mandb
+#+end_src
+
+** Method 3: Using GNU Stow (Recommended)
 
 GNU Stow allows you to manage programs installed from source more easily by using symlinks.
+This makes installation, upgrades, and removal much cleaner.
 
 Reference: [[https://linuxconfig.org/how-to-use-gnu-stow-to-manage-programs-installed-from-source-and-dotfiles][GNU Stow to manage programs installed from source and dotfiles]]
 
-#+begin_src shell
+*How Stow works:*
+Stow creates symlinks from =/usr/local/*= to =/usr/local/stow/<package>/*=, keeping each package isolated
+in its own directory. This makes it easy to remove or upgrade packages without affecting others.
+
+#+begin_src shell-script
 # 1. Install stow
 sudo aptitude install stow
 
-# 2. Build and install <package_name> to stow directory
-#    (replace <package_name> with actual package name, e.g., git-2.40.0)
-./configure --prefix=/usr/local/stow/<package_name>
+# 2. Build and install package to stow directory
+#    Example: Installing git version 2.40.0
+PACKAGE_NAME="git-2.40.0"
+./configure --prefix=/usr/local/stow/${PACKAGE_NAME}
 make -j$(nproc)
 sudo make install
 
 # 3. Create symlinks from /usr/local to the stow package
 cd /usr/local/stow
-sudo stow --verbose=2 <package_name>
+sudo stow --verbose=2 ${PACKAGE_NAME}
 
 # 4. Verify installation
-# 4.1. Check the symlinks created by stow
-stow -vv <package_name>
+# 4.1. Verify that symlinks exist in /usr/local/bin
+ls -la /usr/local/bin/git
+# Should show: /usr/local/bin/git -> ../stow/git-2.40.0/bin/git
 
-# 4.2. Verify that symlinks exist in /usr/local/bin
-ls -la /usr/local/bin | grep <package_name>
+# 4.2. Test the installed program
+git --version
 
-# 5. To remove a package later
+# 5. To upgrade: install new version, then switch
+# Install new version
+cd /path/to/new/source
+PACKAGE_NAME="git-2.41.0"
+./configure --prefix=/usr/local/stow/${PACKAGE_NAME}
+make -j$(nproc)
+sudo make install
+
+# Remove old symlinks and create new ones
 cd /usr/local/stow
-sudo stow --delete <package_name>
+sudo stow --delete git-2.40.0
+sudo stow git-2.41.0
+
+# 6. To remove a package completely
+cd /usr/local/stow
+sudo stow --delete ${PACKAGE_NAME}
 # Then remove the directory
-sudo rm -rf /usr/local/stow/<package_name>
+sudo rm -rf /usr/local/stow/${PACKAGE_NAME}
+#+end_src
+
+*Tip:* Always include the version number in the package name when using Stow (e.g., =git-2.40.0=, not just =git=).
+This makes it easy to manage multiple versions.
+
+* Troubleshooting
+
+** Common Build Errors
+
+*** Missing dependencies
+
+Error: =configure: error: Package requirements were not met=
+
+Solution:
+#+begin_src shell-script
+# Install build dependencies for the package
+sudo aptitude build-dep <package-name>
+
+# Or check configure output for specific missing libraries
+./configure --prefix=/usr/local 2>&1 | grep -i "not found"
+#+end_src
+
+*** Permission denied errors
+
+Error: =Permission denied= when running =make install=
+
+Solution:
+#+begin_src shell-script
+# Always use sudo for make install
+sudo make install
+
+# If you want to install without sudo, use a prefix in your home directory
+./configure --prefix=$HOME/.local
+make install  # No sudo needed
+#+end_src
+
+*** Conflicts with system packages
+
+Error: Program runs old version after installation
+
+Solution:
+#+begin_src shell-script
+# Check which version is being used
+which git
+git --version
+
+# Verify PATH priority
+echo $PATH
+# /usr/local/bin should come before /usr/bin
+
+# If not, add to ~/.bashrc or ~/.zshrc:
+export PATH="/usr/local/bin:$PATH"
+#+end_src
+
+*** Out of disk space
+
+Error: =No space left on device=
+
+Solution:
+#+begin_src shell-script
+# Check available space
+df -h /usr/local
+df -h /tmp
+
+# Clean up build artifacts
+make clean
+
+# Remove old source directories
+rm -rf /path/to/old/source/directories
+#+end_src
+
+** Compilation Issues
+
+*** Parallel build failures
+
+Error: Random build failures with =make -j$(nproc)=
+
+Solution:
+#+begin_src shell-script
+# Try building without parallel jobs
+make clean
+make
+
+# Or use fewer jobs
+make -j4
+#+end_src
+
+*** Library not found at runtime
+
+Error: =error while loading shared libraries: libfoo.so.1: cannot open shared object file=
+
+Solution:
+#+begin_src shell-script
+# Update library cache
+sudo ldconfig
+
+# Check library paths
+ldconfig -p | grep libfoo
+
+# If library is in /usr/local/lib, ensure it's in the cache
+echo "/usr/local/lib" | sudo tee /etc/ld.so.conf.d/local.conf
+sudo ldconfig
+#+end_src
+
+* Verification Commands
+
+Quick reference for verifying installed packages:
+
+#+begin_src shell-script
+# Check installed version
+git --version
+emacs --version
+ctags --version
+gtags --version
+
+# Check installation location
+which git
+which emacs
+which ctags
+which gtags
+
+# Check if binary is a symlink (when using Stow)
+ls -la $(which git)
+
+# View shared library dependencies
+ldd $(which git)
+
+# Check alternatives configuration
+update-alternatives --display ctags
+
+# Verify man pages are installed
+man git
+man emacs
+man ctags
+man gtags
 #+end_src
