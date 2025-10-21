@@ -12,13 +12,15 @@
 
 *** Prepare
 
+Install build dependencies:
+
 #+begin_src shell-script
 sudo aptitude build-dep git
 #+end_src
 
 *** Download and install
 
-https://github.com/git/git
+Source repository: https://github.com/git/git
 
 #+begin_src shell-script
 make configure
@@ -31,57 +33,83 @@ sudo make install install-doc install-html
 
 *** Prepare
 
+Install build dependencies:
+
 #+begin_src shell-script
 sudo aptitude build-dep emacs
 #+end_src
 
 *** Download and install
 
-https://savannah.gnu.org/projects/emacs/
-
-http://www.gnu.org/software/emacs/
+Source repositories:
+- https://savannah.gnu.org/projects/emacs/
+- http://www.gnu.org/software/emacs/
 
 #+begin_src shell-script
+# Option 1: Basic installation
 ./configure --prefix=/usr/local
-# To support 'modules': vterm, etc.
-# NOTE: should install: libvterm-dev (Debian, Ubuntu)
+
+# Option 2: With modules support (for vterm, etc.)
+# NOTE: First install libvterm-dev on Debian/Ubuntu
 ./configure --with-modules --prefix=/usr/local
+
+# Build and install
 make -j$(nproc)
 sudo make install
 #+end_src
 
+*** Emacs 'ctags' as alternative (optional)
+
+If you need to preserve Emacs =ctags= as an alternative (managing different ctags implementations
+using the alternatives system):
+
+#+begin_src shell-script
+# First, verify current version
+ctags --version
+# Save the Emacs ctags binary with a versioned name
+sudo cp /usr/local/bin/ctags /usr/local/bin/ctags-emacs-<version>
+
+# Register it as an alternative (priority: 10)
+sudo update-alternatives --install /usr/local/bin/ctags ctags /usr/local/bin/ctags-emacs-<version> 10
+#+end_src
+
 ** Tagging
 
-https://www.reddit.com/r/emacs/comments/3pni17/ctags_etags_or_gtags/
-
-https://scripter.co/ctags-systemverilog-and-emacs/
+Additional resources:
+- https://www.reddit.com/r/emacs/comments/3pni17/ctags_etags_or_gtags/
+- https://scripter.co/ctags-systemverilog-and-emacs/
 
 *** Ctags
 
 **** Download and install
 
-https://github.com/universal-ctags/ctags ([[https://github.com/universal-ctags][universal-ctags]])
+Source repository: https://github.com/universal-ctags/ctags ([[https://github.com/universal-ctags][universal-ctags]])
 
 #+begin_src shell-script
 git clone https://github.com/universal-ctags/ctags.git
 cd ctags
-# Get last Git tag from the master branch
+
+# Get the last stable release tag from master branch
 git checkout $(git describe --tags --abbrev=0 master)
+
 ./autogen.sh
-# Set path to the ctags (/usr/local/bin/ctags)
+
+# Install to /usr/local (ctags will be at /usr/local/bin/ctags)
 ./configure --prefix=/usr/local
+
 make -j$(nproc)
 sudo make install
 #+end_src
 
-**** Add alternatives
+**** Add alternatives (optional)
 
-If you will need alternative current the Emacs ctags, your may add it by the way:
+If you need to manage multiple ctags versions using alternatives system:
 
 #+begin_src shell-script
-# Copy
+# Backup the current version with a versioned name
 sudo cp /usr/local/bin/ctags /usr/local/bin/ctags-universal-<version>
-# Add alternatives
+
+# Register it as an alternative (priority: 9)
 sudo update-alternatives --install /usr/local/bin/ctags ctags /usr/local/bin/ctags-universal-<version> 9
 #+end_src
 
@@ -93,20 +121,24 @@ sudo update-alternatives --install /usr/local/bin/ctags ctags /usr/local/bin/cta
 
 **** Prepare
 
-May be required
+Install build dependencies (may be required):
+
 #+begin_src shell-script
 sudo aptitude build-dep global
 #+end_src
 
 **** Download and install
 
-http://www.gnu.org/software/global/download.html
+Download page: http://www.gnu.org/software/global/download.html
 
 #+begin_src shell-script
-# Without exuberant-ctags
+# Option 1: Without exuberant-ctags
 ./configure --prefix=/usr/local
-# If requered exuberant-ctags
+
+# Option 2: With exuberant-ctags support
 ./configure --prefix=/usr/local --with-exuberant-ctags=/usr/local/bin/ctags
+
+# Build and install
 make -j$(nproc)
 sudo make install
 #+end_src
@@ -117,69 +149,70 @@ sudo make install
 
 **** Tips
 
-man: http://www.gnu.org/software/global/manual/global.pdf
+Manual: http://www.gnu.org/software/global/manual/global.pdf
 
-Copy config file from global-pygments-plugin-master (sample.globalrc)
-https://github.com/yoshizow/global-pygments-plugin
+Configuration:
+1. Copy config file from global-pygments-plugin (sample.globalrc)
+   https://github.com/yoshizow/global-pygments-plugin
 
-Install Pygments (for example by pip, https://github.com/yoshizow/global-pygments-plugin)
+2. Install Pygments (for example using pip)
+   https://github.com/yoshizow/global-pygments-plugin
 
-*** Ctags alternatives
+*** Exuberant-ctags (optional)
 
-If other alternatives are required
-
-**** Emacs
-
-Add alternatives or just rewrite bin-file
+If you need exuberant-ctags as an alternative:
 
 #+begin_src shell-script
-# Save(check with command: ctags --version)
-sudo cp /usr/local/bin/ctags /usr/local/bin/ctags-emacs-<version>
-
-# Add alternatives
-sudo update-alternatives --install /usr/local/bin/ctags ctags /usr/local/bin/ctags-emacs-<version> 10
-#+end_src
-
-**** Exuberant-ctags
-
-If exuberant-ctags is required as an alternative
-#+begin_src shell-script
-# Install
+# Install exuberant-ctags from repository
 sudo aptitude install exuberant-ctags
-# Check current ctags version
-ctags --version
-Exuberant Ctags 5.9~svn20110310, Copyright (C) 1996-2009 Darren Hiebert
-  Addresses: <dhiebert@users.sourceforge.net>, http://ctags.sourceforge.net
-  Optional compiled features: +wildcards, +regex
 
-# Add alternatives
+# Verify the installation and version
+ctags --version
+# Expected output:
+# Exuberant Ctags 5.9~svn20110310, Copyright (C) 1996-2009 Darren Hiebert
+#   Addresses: <dhiebert@users.sourceforge.net>, http://ctags.sourceforge.net
+#   Optional compiled features: +wildcards, +regex
+
+# Register it as an alternative (priority: 11, highest priority)
 sudo update-alternatives --install /usr/local/bin/ctags ctags /usr/bin/ctags-exuberant 11
 #+end_src
 
 * Remove packages installed from source
 
-[[https://ostechnix.com/an-easy-way-to-remove-programs-installed-from-source-in-linux/][An Easy Way To Remove Programs Installed From Source In Linux]]
-
-[[https://www.rosehosting.com/blog/how-to-easily-remove-packages-installed-from-source-in-linux/][How to Easily Remove Packages Installed From Source in Linux]]
+Additional resources:
+- [[https://ostechnix.com/an-easy-way-to-remove-programs-installed-from-source-in-linux/][An Easy Way To Remove Programs Installed From Source In Linux]]
+- [[https://www.rosehosting.com/blog/how-to-easily-remove-packages-installed-from-source-in-linux/][How to Easily Remove Packages Installed From Source in Linux]]
 
 *** Stow - software package installation manager
 
-[[https://linuxconfig.org/how-to-use-gnu-stow-to-manage-programs-installed-from-source-and-dotfiles][GNU Stow to manage programs installed from source and dotfiles]]
+GNU Stow allows you to manage programs installed from source more easily by using symlinks.
+
+Reference: [[https://linuxconfig.org/how-to-use-gnu-stow-to-manage-programs-installed-from-source-and-dotfiles][GNU Stow to manage programs installed from source and dotfiles]]
 
 #+begin_src shell
-# 1. install stow
+# 1. Install stow
 sudo aptitude install stow
-# 2. build and install <package_name> to 'stow' directory (use prefix options):
+
+# 2. Build and install <package_name> to stow directory
+#    (replace <package_name> with actual package name, e.g., git-2.40.0)
 ./configure --prefix=/usr/local/stow/<package_name>
+make -j$(nproc)
 sudo make install
-# 3. generate symlinks
+
+# 3. Create symlinks from /usr/local to the stow package
 cd /usr/local/stow
 sudo stow --verbose=2 <package_name>
-# 4.1. check links
+
+# 4. Verify installation
+# 4.1. Check the symlinks created by stow
 stow -vv <package_name>
-# 4.2. check that links replace executable files
-tree /usr/local/bin/<package_name>
-# 5. remove <package_name>
+
+# 4.2. Verify that symlinks exist in /usr/local/bin
+ls -la /usr/local/bin | grep <package_name>
+
+# 5. To remove a package later
 cd /usr/local/stow
 sudo stow --delete <package_name>
+# Then remove the directory
+sudo rm -rf /usr/local/stow/<package_name>
 #+end_src
